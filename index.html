@@ -1,86 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Verificación de Participantes</title>
-  <style>
-    body { font-family: Arial; padding: 20px; }
-    input, button { padding: 10px; font-size: 16px; margin: 5px; }
-    #resultado, #formulario { margin-top: 20px; border: 1px solid #ccc; padding: 15px; }
-  </style>
+<meta charset="UTF-8" />
+<title>Validación de Participantes</title>
 </head>
 <body>
+<h2>Buscar Participante</h2>
+<input id="dni" placeholder="Ingrese DNI" />
+<button onclick="buscar()">Buscar</button>
+<div id="resultado"></div>
+<div id="formulario" style="display:none;">
+  <h3>Corrige tus datos</h3>
+  Nombre: <input id="nombre" /><br />
+  Correo: <input id="correo" /><br />
+  Grado de estudios: <input id="grado" /><br />
+  Profesión: <input id="profesion" /><br />
+  <button onclick="actualizar()">Actualizar</button>
+</div>
 
-  <h2>Verifica tu información</h2>
-  <label>DNI:</label>
-  <input type="text" id="dni" placeholder="Ingresa tu DNI">
-  <button onclick="buscar()">Buscar</button>
+<script>
+const API_URL = "https://docs.google.com/spreadsheets/d/1DcwuxIObwRhpHGfw30B_gjsT2VZ4zbV0AafRMiRKOi4/edit?usp=drive_web";
 
-  <div id="resultado"></div>
-  <div id="formulario" style="display:none;">
-    <h3>Corrige tus datos</h3>
-    <label>Nombre:</label><br>
-    <input type="text" id="nuevoNombre"><br>
-    <label>Correo:</label><br>
-    <input type="email" id="nuevoCorreo"><br><br>
-    <button onclick="actualizar()">Actualizar</button>
-  </div>
+let filaId = null;
 
-  <script>
-    const API_URL = "https://docs.google.com/spreadsheets/d/1DcwuxIObwRhpHGfw30B_gjsT2VZ4zbV0AafRMiRKOi4/edit?usp=drive_web"; // reemplaza aquí
+async function buscar() {
+  const dni = document.getElementById("dni").value.trim();
+  const res = await fetch(API_URL);
+  const data = await res.json();
+  const persona = data.find(p => p.dni === dni);
+  if (persona) {
+    filaId = persona.rowIndex;
+    document.getElementById("resultado").innerHTML = `Encontrado: ${persona.nombre}`;
+    document.getElementById("nombre").value = persona.nombre || "";
+    document.getElementById("correo").value = persona.correo || "";
+    document.getElementById("grado").value = persona.grado || "";
+    document.getElementById("profesion").value = persona.profesion || "";
+    document.getElementById("formulario").style.display = "block";
+  } else {
+    document.getElementById("resultado").innerHTML = "DNI no encontrado.";
+    document.getElementById("formulario").style.display = "none";
+  }
+}
 
-    let filaID = null; // ID de la fila a actualizar
-
-    async function buscar() {
-      const dni = document.getElementById("dni").value.trim();
-      const respuesta = await fetch(API_URL);
-      const datos = await respuesta.json();
-      const persona = datos.find(p => p.dni === dni);
-
-      if (persona) {
-        document.getElementById("resultado").innerHTML = `
-          <p><strong>Nombre registrado:</strong> ${persona.nombre}</p>
-          <p><strong>Correo:</strong> ${persona.correo}</p>
-        `;
-
-        document.getElementById("nuevoNombre").value = persona.nombre;
-        document.getElementById("nuevoCorreo").value = persona.correo;
-        document.getElementById("formulario").style.display = "block";
-
-        filaID = persona.rowIndex; // Guardamos el ID de fila para actualizar luego
-      } else {
-        document.getElementById("resultado").innerHTML = `<p style="color:red;">DNI no encontrado.</p>`;
-        document.getElementById("formulario").style.display = "none";
-      }
-    }
-
-    async function actualizar() {
-      const nuevoNombre = document.getElementById("nuevoNombre").value.trim();
-      const nuevoCorreo = document.getElementById("nuevoCorreo").value.trim();
-
-      if (!filaID) {
-        alert("Error: No se ha encontrado una fila válida para actualizar.");
-        return;
-      }
-
-      const actualizacion = {
-        nombre: nuevoNombre,
-        correo: nuevoCorreo
-      };
-
-      const response = await fetch(`${API_URL}/${filaID}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(actualizacion)
-      });
-
-      if (response.ok) {
-        alert("Datos actualizados correctamente.");
-      } else {
-        alert("Error al actualizar.");
-      }
-    }
-  </script>
-
+async function actualizar() {
+  if (!filaId) return alert("Busca primero tu DNI.");
+  const actualizado = {
+    nombre: document.getElementById("nombre").value.trim(),
+    correo: document.getElementById("correo").value.trim(),
+    grado: document.getElementById("grado").value.trim(),
+    profesion: document.getElementById("profesion").value.trim()
+  };
+  const res = await fetch(`${API_URL}/${filaId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(actualizado)
+  });
+  if (res.ok) alert("Datos actualizados.");
+  else alert("Error al actualizar.");
+}
+</script>
 </body>
 </html>
