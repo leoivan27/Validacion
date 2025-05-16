@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Validación de Certificados</title>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; background-color: #f0f0f0; }
+    input, button { padding: 8px; font-size: 16px; }
+    .card { background: white; padding: 1rem; margin-top: 1rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <h1>Buscar y Validar Certificado</h1>
+  <label for="dni">Ingrese su DNI:</label>
+  <input type="text" id="dni" placeholder="Ejemplo: 12345678">
+  <button onclick="buscar()">Buscar</button>
+
+  <div id="resultado" class="card" style="display: none;">
+    <p><strong>Nombre:</strong> <span id="nombre"></span></p>
+    <p><strong>Profesión:</strong> <span id="profesion"></span></p>
+    <p><strong>Grado:</strong> <span id="grado"></span></p>
+    <button onclick="validar()">✅ Validar</button>
+    <button onclick="window.location.href='https://forms.gle/tu_formulario'">🛠️ Corregir</button>
+  </div>
+
+  <script>
+    async function buscar() {
+      const dni = document.getElementById('dni').value;
+      const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRINru6qEU3znUUFxX9Qjk_qT8c02Is2gFmEd4gmcuyY8qJKCiHK0MBxz5_slfrZKrcGM0RHoD7Uo07/pub?gid=976835841&single=true&output=csv';
+
+      const response = await fetch(url);
+      const data = await response.text();
+      const rows = data.split('\n').slice(1);
+
+      let encontrado = false;
+      rows.forEach(row => {
+        const cols = row.split(',');
+        if (cols[0].trim() === dni.trim()) {
+          document.getElementById('nombre').innerText = cols[1];
+          document.getElementById('profesion').innerText = cols[2];
+          document.getElementById('grado').innerText = cols[3];
+          document.getElementById('resultado').style.display = 'block';
+          encontrado = true;
+        }
+      });
+
+      if (!encontrado) {
+        alert('DNI no encontrado en la base de datos.');
+        document.getElementById('resultado').style.display = 'none';
+      }
+    }
+
+    function validar() {
+      alert('Validación registrada. (En la versión final esto se guardará en la hoja)');
+    }
+  </script>
+</body>
+</html>
