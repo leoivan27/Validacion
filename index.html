@@ -2,61 +2,41 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<title>Validación de Participantes</title>
+<title>Buscar Participante</title>
 </head>
 <body>
-<h2>Buscar Participante</h2>
+<h2>Buscar participante por DNI</h2>
 <input id="dni" placeholder="Ingrese DNI" />
 <button onclick="buscar()">Buscar</button>
 <div id="resultado"></div>
-<div id="formulario" style="display:none;">
-  <h3>Corrige tus datos</h3>
-  Nombre: <input id="nombre" /><br />
-  Correo: <input id="correo" /><br />
-  Grado de estudios: <input id="grado" /><br />
-  Profesión: <input id="profesion" /><br />
-  <button onclick="actualizar()">Actualizar</button>
-</div>
 
 <script>
-const API_URL = "https://docs.google.com/spreadsheets/d/1DcwuxIObwRhpHGfw30B_gjsT2VZ4zbV0AafRMiRKOi4/edit?usp=drive_web";
-
-let filaId = null;
+const API_URL = "TU_URL_DE_SHEET_BEST_AQUI";
 
 async function buscar() {
   const dni = document.getElementById("dni").value.trim();
+  if (!dni) {
+    document.getElementById("resultado").innerText = "Por favor ingresa un DNI.";
+    return;
+  }
+
   const res = await fetch(API_URL);
   const data = await res.json();
-  const persona = data.find(p => p.dni === dni);
-  if (persona) {
-    filaId = persona.rowIndex;
-    document.getElementById("resultado").innerHTML = `Encontrado: ${persona.nombre}`;
-    document.getElementById("nombre").value = persona.nombre || "";
-    document.getElementById("correo").value = persona.correo || "";
-    document.getElementById("grado").value = persona.grado || "";
-    document.getElementById("profesion").value = persona.profesion || "";
-    document.getElementById("formulario").style.display = "block";
-  } else {
-    document.getElementById("resultado").innerHTML = "DNI no encontrado.";
-    document.getElementById("formulario").style.display = "none";
-  }
-}
 
-async function actualizar() {
-  if (!filaId) return alert("Busca primero tu DNI.");
-  const actualizado = {
-    nombre: document.getElementById("nombre").value.trim(),
-    correo: document.getElementById("correo").value.trim(),
-    grado: document.getElementById("grado").value.trim(),
-    profesion: document.getElementById("profesion").value.trim()
-  };
-  const res = await fetch(`${API_URL}/${filaId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(actualizado)
-  });
-  if (res.ok) alert("Datos actualizados.");
-  else alert("Error al actualizar.");
+  // Busca ignorando mayúsculas/minúsculas
+  const persona = data.find(p => p.DNI === dni);
+  if (persona) {
+    document.getElementById("resultado").innerHTML = `
+      <p><strong>Nombre:</strong> ${persona.Nombre}</p>
+      <p><strong>DNI:</strong> ${persona.DNI}</p>
+      <p><strong>Correo:</strong> ${persona.Correo}</p>
+      <p><strong>Profesión:</strong> ${persona.Profesion}</p>
+      <p><strong>Valido:</strong> ${persona.Valido}</p>
+      <p><strong>Certificado:</strong> <a href="${persona["Enlace Certificado"]}" target="_blank">Ver certificado</a></p>
+    `;
+  } else {
+    document.getElementById("resultado").innerText = "DNI no encontrado.";
+  }
 }
 </script>
 </body>
