@@ -1,58 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Validación de Certificados</title>
   <meta charset="UTF-8">
+  <title>Verificación de Participantes</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; background-color: #f0f0f0; }
-    input, button { padding: 8px; font-size: 16px; }
-    .card { background: white; padding: 1rem; margin-top: 1rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    body { font-family: Arial; padding: 20px; }
+    input, button { padding: 10px; font-size: 16px; margin: 5px; }
+    #resultado, #formulario { margin-top: 20px; border: 1px solid #ccc; padding: 15px; }
   </style>
 </head>
 <body>
-  <h1>Buscar y Validar Certificado</h1>
-  <label for="dni">Ingrese su DNI:</label>
-  <input type="text" id="dni" placeholder="Ejemplo: 12345678">
+
+  <h2>Verifica tu información</h2>
+  <label>DNI:</label>
+  <input type="text" id="dni" placeholder="Ingresa tu DNI">
   <button onclick="buscar()">Buscar</button>
 
-  <div id="resultado" class="card" style="display: none;">
-    <p><strong>Nombre:</strong> <span id="nombre"></span></p>
-    <p><strong>Profesión:</strong> <span id="profesion"></span></p>
-    <p><strong>Grado:</strong> <span id="grado"></span></p>
-    <button onclick="validar()">✅ Validar</button>
-    <button onclick="window.location.href='https://forms.gle/tu_formulario'">🛠️ Corregir</button>
+  <div id="resultado"></div>
+  <div id="formulario" style="display:none;">
+    <h3>Corrige tus datos</h3>
+    <label>Nombre:</label><br>
+    <input type="text" id="nuevoNombre"><br>
+    <label>Correo:</label><br>
+    <input type="email" id="nuevoCorreo"><br><br>
+    <button onclick="actualizar()">Actualizar</button>
   </div>
 
   <script>
+    const API_URL = "https://docs.google.com/spreadsheets/d/1DcwuxIObwRhpHGfw30B_gjsT2VZ4zbV0AafRMiRKOi4/edit?usp=drive_web"; // reemplaza aquí
+
+    let filaID = null; // ID de la fila a actualizar
+
     async function buscar() {
-      const dni = document.getElementById('dni').value;
-      const url = 'https://docs.google.com/spreadsheets/d/1DcwuxIObwRhpHGfw30B_gjsT2VZ4zbV0AafRMiRKOi4/edit?usp=drive_web';
+      const dni = document.getElementById("dni").value.trim();
+      const respuesta = await fetch(API_URL);
+      const datos = await respuesta.json();
+      const persona = datos.find(p => p.dni === dni);
 
-      const response = await fetch(url);
-      const data = await response.text();
-      const rows = data.split('\n').slice(1);
+      if (persona) {
+        document.getElementById("resultado").innerHTML = `
+          <p><strong>Nombre registrado:</strong> ${persona.nombre}</p>
+          <p><strong>Correo:</strong> ${persona.correo}</p>
+        `;
 
-      let encontrado = false;
-      rows.forEach(row => {
-        const cols = row.split(',');
-        if (cols[0].trim() === dni.trim()) {
-          document.getElementById('nombre').innerText = cols[1];
-          document.getElementById('profesion').innerText = cols[2];
-          document.getElementById('grado').innerText = cols[3];
-          document.getElementById('resultado').style.display = 'block';
-          encontrado = true;
-        }
-      });
+        document.getElementById("nuevoNombre").value = persona.nombre;
+        document.getElementById("nuevoCorreo").value = persona.correo;
+        document.getElementById("formulario").style.display = "block";
 
-      if (!encontrado) {
-        alert('DNI no encontrado en la base de datos.');
-        document.getElementById('resultado').style.display = 'none';
+        filaID = persona.rowIndex; // Guardamos el ID de fila para actualizar luego
+      } else {
+        document.getElementById("resultado").innerHTML = `<p style="color:red;">DNI no encontrado.</p>`;
+        document.getElementById("formulario").style.display = "none";
       }
     }
 
-    function validar() {
-      alert('Validación registrada. (En la versión final esto se guardará en la hoja)');
+    async function actualizar() {
+      const nuevoNombre = document.getElementById("nuevoNombre").value.trim();
+      const nuevoCorreo = document.getElementById("nuevoCorreo").value.trim();
+
+      if (!filaID) {
+        alert("Error: No se ha encontrado una fila válida para actualizar.");
+        return;
+      }
+
+      const actualizacion = {
+        nombre: nuevoNombre,
+        correo: nuevoCorreo
+      };
+
+      const response = await fetch(`${API_URL}/${filaID}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(actualizacion)
+      });
+
+      if (response.ok) {
+        alert("Datos actualizados correctamente.");
+      } else {
+        alert("Error al actualizar.");
+      }
     }
   </script>
+
 </body>
 </html>
